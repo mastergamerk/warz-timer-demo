@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WarZ Clan Boss Timer - DEMO SANDBOX</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,300;0,400;0,600;0,700;1,600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #06090e;
+            --bg-card: rgba(13, 17, 23, 0.75);
+            --border-normal: #21262d;
+            --border-glow: #30363d;
+            --text-muted: #8b949e;
+            --color-primary: #58a6ff;
+            --color-danger: #ff4757;
+            --color-success: #2ed573;
+            --color-warning: #ffd32a;
+            --color-orange: #ff7f50;
+        }
+
+        body {
+            font-family: 'Chakra Petch', sans-serif;
+            background-color: var(--bg-main);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(88, 166, 255, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(255, 71, 87, 0.04) 0%, transparent 50%);
+            color: #f0f6fc; margin: 0; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box;
+        }
+
+        .app-section { display: none; width: 100%; max-width: 420px; }
+        .app-section.active { display: block; animation: fadeIn 0.4s ease-out; }
+        #mainTimerSection.active { display: flex; flex-direction: column; align-items: center; max-width: 1250px; position: relative; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .admin-nav-bar {
+            display: none; gap: 15px; width: 100%; max-width: 1230px; margin-bottom: 25px; border-bottom: 1px solid var(--border-normal); padding-bottom: 15px;
+        }
+        .btn-nav {
+            font-family: 'Chakra Petch', sans-serif; background-color: #161b22; color: var(--text-muted); border: 1px solid var(--border-normal); padding: 10px 20px; font-size: 1rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-nav.active {
+            color: #fff; border-color: var(--color-danger); background-color: rgba(255, 71, 87, 0.1); box-shadow: 0 0 10px rgba(255, 71, 87, 0.15);
+        }
+
+        .global-online-badge {
+            position: absolute; top: 0; right: 10px; background: rgba(13, 17, 23, 0.8); border: 1px solid var(--border-glow); padding: 8px 16px; border-radius: 4px; display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        @media (max-width: 768px) {
+            .global-online-badge { position: static; margin-bottom: 15px; width: fit-content; }
+        }
+        .pulse-dot { width: 9px; height: 9px; background-color: var(--color-success); border-radius: 50%; box-shadow: 0 0 10px var(--color-success); animation: pulseGlow 1.5s infinite; }
+        @keyframes pulseGlow { 0% { transform: scale(0.9); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.6; } }
+
+        .tab-content { display: none; width: 100%; }
+        .tab-content.active { display: flex; flex-direction: column; align-items: center; }
+
+        .auth-card { background-color: var(--bg-card); border: 1px solid var(--border-normal); border-radius: 8px; padding: 35px; backdrop-filter: blur(12px); box-shadow: 0 12px 32px rgba(0,0,0,0.7); border-top: 3px solid var(--color-primary); width: 100%; box-sizing: border-box; }
+        .auth-card.register-mode { border-top-color: var(--color-danger); }
+        .auth-card.profile-mode { border-top-color: var(--color-success); }
+
+        .auth-title { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 5px; text-align: center; letter-spacing: 2px; }
+        .auth-desc { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px; }
+        
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #c9d1d9; margin-bottom: 8px; }
+        
+        .form-control {
+            font-family: 'Chakra Petch', sans-serif; width: 100%; padding: 12px 15px; background-color: #070a0e; color: #fff;
+            border: 1px solid var(--border-normal); border-radius: 4px; box-sizing: border-box; outline: none; font-size: 1rem;
+        }
+        .form-control:focus { border-color: var(--color-primary); box-shadow: 0 0 10px rgba(88, 166, 255, 0.15); }
+        
+        .btn-submit {
+            font-family: 'Chakra Petch', sans-serif; width: 100%; padding: 14px;
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(88, 166, 255, 0.03)); color: var(--color-primary);
+            border: 1px solid var(--color-primary); border-radius: 4px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-submit:hover { background: var(--color-primary); color: #fff; box-shadow: 0 0 15px rgba(88, 166, 255, 0.3); }
+        
+        .auth-switch { text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); }
+        .auth-switch span { color: var(--color-primary); cursor: pointer; font-weight: 600; }
+
+        .profile-list { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; width: 100%; }
+        .profile-item { background-color: rgba(7, 10, 14, 0.6); border: 1px solid var(--border-normal); padding: 14px 20px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .profile-name-text { font-size: 1.1rem; font-weight: 600; color: #f0f6fc; }
+
+        h1 { margin: 0; font-size: 2.6rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; background: linear-gradient(45deg, var(--color-danger), #ff6b81); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
+        .user-badge { background-color: rgba(88, 166, 255, 0.1); color: #fff; border: 1px solid rgba(88, 166, 255, 0.3); padding: 6px 18px; border-radius: 4px; font-size: 0.95rem; margin-bottom: 25px; display: inline-block; font-weight: 600; }
+        
+        .audio-dashboard-container {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 1230px; margin-bottom: 30px; align-items: stretch;
+        }
+        @media (max-width: 768px) { .audio-dashboard-container { grid-template-columns: 1fr; } }
+
+        .audio-control-card {
+            background-color: var(--bg-card); border: 1px solid var(--border-normal); border-radius: 6px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; height: 100%; justify-content: flex-start;
+        }
+        .audio-card-title { font-size: 1.1rem; font-weight: 600; color: var(--color-primary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; letter-spacing: 1px; }
+        
+        .volume-slider-group { display: flex; align-items: center; gap: 15px; background: rgba(7, 10, 14, 0.6); border: 1px solid var(--border-normal); padding: 15px; border-radius: 4px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+        .volume-slider-group label { font-size: 0.9rem; font-weight: 600; min-width: 90px; color: #c9d1d9; }
+        .slider-input { flex-grow: 1; accent-color: var(--color-primary); cursor: pointer; height: 6px; border-radius: 3px; }
+        .volume-value { font-family: monospace; font-size: 1rem; color: var(--color-success); font-weight: bold; min-width: 45px; text-align: right; }
+
+        .youtube-input-group { display: flex; gap: 10px; margin-bottom: 12px; width: 100%; }
+        .youtube-player-area { width: 100%; background: #070a0e; border-radius: 4px; overflow: hidden; display: none; border: 1px solid var(--border-normal); position: relative; padding-top: 56.25%; margin-top: 12px; }
+        .youtube-player-area iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+        .music-btn-cluster { display: flex; gap: 8px; width: 100%; margin-top: auto; }
+
+        .server-selector { display: flex; gap: 15px; margin-bottom: 30px; }
+        .btn-server { font-family: 'Chakra Petch', sans-serif; background-color: rgba(31, 36, 44, 0.5); color: var(--text-muted); border: 1px solid var(--border-normal); padding: 14px 28px; font-size: 1.05rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+        .btn-server.active { color: #ffffff; background-color: rgba(255, 71, 87, 0.12); border-color: var(--color-danger); box-shadow: 0 0 15px rgba(255, 71, 87, 0.25); }
+
+        .location-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; width: 100%; max-width: 1230px; margin-bottom: 35px; }
+        @media (max-width: 768px) { .location-grid { grid-template-columns: repeat(2, 1fr); } }
+        .location-card { background-color: var(--bg-card); border: 1px solid var(--border-normal); border-radius: 4px; padding: 22px 15px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
+        .location-card:hover { border-color: var(--color-primary); background-color: rgba(88, 166, 255, 0.03); transform: translateY(-2px); }
+        .location-card.active { border-color: var(--color-primary); background-color: rgba(88, 166, 255, 0.08); box-shadow: 0 0 20px rgba(88, 166, 255, 0.15); }
+        .location-name { font-weight: 600; font-size: 1rem; color: #c9d1d9; margin-top: 5px; }
+
+        .current-view-title { font-size: 1.5rem; color: var(--color-primary); font-weight: 600; margin-bottom: 25px; }
+        .rooms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; width: 100%; max-width: 1250px; padding: 10px; margin-bottom: 40px; }
+        
+        .room-box { background-color: var(--bg-card); border: 1px solid var(--border-normal); border-radius: 4px; padding: 25px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .room-box.counting { border-color: rgba(255, 71, 87, 0.7); background-color: rgba(28, 21, 23, 0.6); box-shadow: 0 0 15px rgba(255, 71, 87, 0.1); }
+        
+        .room-box.spawn-flash { animation: tacticalThreeColorFlash 3s infinite; }
+        @keyframes tacticalThreeColorFlash {
+            0%, 30% { border-color: var(--color-danger); box-shadow: 0 0 20px rgba(255, 71, 87, 0.4); background-color: rgba(255, 71, 87, 0.05); }
+            33%, 63% { border-color: var(--color-warning); box-shadow: 0 0 20px rgba(255, 211, 42, 0.4); background-color: rgba(255, 211, 42, 0.05); }
+            66%, 100% { border-color: var(--color-success); box-shadow: 0 0 20px rgba(46, 213, 115, 0.4); background-color: rgba(46, 213, 115, 0.05); }
+        }
+
+        .room-title { font-size: 1.1rem; font-weight: 600; color: #c9d1d9; margin-bottom: 5px; letter-spacing: 1.5px; }
+        .room-owner-tag { font-size: 0.8rem; color: var(--color-warning); margin-bottom: 12px; font-weight: normal; min-height: 18px; }
+        
+        .room-timer { font-size: 2.6rem; font-weight: 700; color: rgba(88, 166, 255, 0.25); margin-bottom: 12px; letter-spacing: 2px; font-family: 'Chakra Petch', sans-serif; display: inline-block; width: 100%; text-align: center; white-space: nowrap; }
+        .room-timer.counting-text { color: #ff5e6c; }
+        .room-timer.spawned-text { color: var(--color-success); font-size: 2rem; letter-spacing: 0px; text-shadow: 0 0 10px rgba(46, 213, 115, 0.3); }
+
+        .progress-container { width: 100%; height: 5px; background-color: #161b22; margin-bottom: 20px; border-radius: 10px; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff4757, #ff6b81); box-shadow: 0 0 8px #ff4757; transition: width 1s linear; }
+        .divider { width: 100%; border: 0; border-top: 1px solid rgba(48, 54, 61, 0.5); margin-bottom: 18px; }
+        
+        .btn-group { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; width: 100%; }
+        .btn-action { font-family: 'Chakra Petch', sans-serif; background-color: #21262d; color: #8b949e; border: 1px solid #30363d; padding: 11px 0; font-size: 0.85rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; }
+        .btn-action:hover:not(:disabled) { background-color: #30363d; color: #f0f6fc; }
+        .btn-spawn-style { color: var(--color-success); border: 1px solid rgba(46, 213, 115, 0.4); background-color: transparent; }
+        .btn-spawn-style:hover:not(:disabled) { background-color: rgba(46, 213, 115, 0.1) !important; border-color: var(--color-success) !important; }
+        .btn-reset-style:hover:not(:disabled) { border-color: var(--color-danger) !important; background-color: rgba(255, 71, 87, 0.08) !important; color: var(--color-danger) !important; }
+        .btn-action:disabled { opacity: 0.15; cursor: not-allowed; border-color: var(--border-normal) !important; color: var(--text-muted) !important; background-color: transparent !important; }
+
+        .log-container { width: 100%; max-width: 1230px; background-color: rgba(13, 17, 23, 0.9); border: 1px solid var(--border-normal); border-radius: 6px; padding: 22px; box-sizing: border-box; margin-bottom: 30px; }
+        .log-header { font-size: 1.2rem; font-weight: 600; color: var(--color-warning); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .log-box-list { max-height: 220px; overflow-y: auto; font-family: monospace; font-size: 0.95rem; color: #c9d1d9; display: flex; flex-direction: column; gap: 6px; }
+        .log-item { padding: 6px 8px; border-bottom: 1px solid rgba(48,54,61,0.2); }
+        .log-time { color: var(--text-muted); margin-right: 8px; }
+
+        .admin-panel-box { width: 100%; max-width: 1230px; background-color: #0b0e14; border: 1px solid #30363d; border-radius: 6px; padding: 30px; box-sizing: border-box; }
+        .admin-header { font-size: 1.5rem; font-weight: bold; color: var(--color-danger); margin-bottom: 20px; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .admin-table th, .admin-table td { padding: 15px 12px; border-bottom: 1px solid #21262d; }
+        .admin-table th { color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .online-dot { display: inline-block; width: 10px; height: 10px; background-color: var(--color-danger); border-radius: 50%; margin-right: 10px; vertical-align: middle; transition: all 0.3s; box-shadow: 0 0 8px var(--color-danger); }
+        .online-dot.online { background-color: var(--color-success); box-shadow: 0 0 12px var(--color-success), 0 0 4px var(--color-success); }
+        
+        .status-badge { padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; display: inline-block; }
+        .status-active { background-color: rgba(46, 213, 115, 0.15); color: var(--color-success); border: 1px solid var(--color-success); }
+        .status-banned { background-color: rgba(255, 71, 87, 0.15); color: var(--color-danger); border: 1px solid var(--color-danger); }
+    </style>
+</head>
+<body>
+
+    <!-- 1. หน้าเข้าสู่ระบบจำลอง -->
+    <div id="loginSection" class="app-section auth-card">
+        <div class="auth-title">TACTICAL LOGIN (DEMO)</div>
+        <div class="auth-desc">เวอร์ชันทดสอบออฟไลน์ พิมพ์ชื่อผู้ใช้ใดก็ได้เพื่อทดลองระบบ</div>
+        <div class="form-group">
+            <label>USERNAME</label>
+            <input type="text" id="loginUser" class="form-control" placeholder="ระบุชื่อผู้ใช้ทดสอบ" value="RCA16">
+        </div>
+        <div class="form-group">
+            <label>PASSWORD</label>
+            <input type="password" id="loginPass" class="form-control" placeholder="••••••••" value="123456">
+        </div>
+        <button class="btn-submit" onclick="handleLogin()">LOG IN</button>
+        <div class="auth-switch">ต้องการทดลองระบบสมัคร? <span onclick="showSection('registerSection')">สมัครสมาชิกจำลอง</span></div>
+    </div>
+
+    <!-- 2. หน้าสมัครสมาชิกจำลอง -->
+    <div id="registerSection" class="app-section auth-card register-mode">
+        <div class="auth-title">REGISTRATION (DEMO)</div>
+        <div class="auth-desc">ระบบผ่านสิทธิ์ให้อัตโนมัติสำหรับเวอร์ชันทดลอง</div>
+        <div class="form-group">
+            <label>USERNAME</label>
+            <input type="text" id="regUser" class="form-control" placeholder="ตั้งชื่อผู้ใช้จำลอง">
+        </div>
+        <div class="form-group">
+            <label>PASSWORD</label>
+            <input type="password" id="regPass" class="form-control" placeholder="ตั้งรหัสผ่าน">
+        </div>
+        <div class="form-group">
+            <label>CONFIRM PASSWORD</label>
+            <input type="password" id="regConfirmPass" class="form-control" placeholder="ยืนยันรหัสผ่าน">
+        </div>
+        <button class="btn-submit" style="color:var(--color-danger); border-color:var(--color-danger);" onclick="handleSignUp()">CREATE ACCOUNT</button>
+        <div class="auth-switch">มีบัญชีจำลองแล้ว? <span onclick="showSection('loginSection')">เข้าสู่ระบบ</span></div>
+    </div>
+
+    <!-- 3. หน้าเลือกโปรไฟล์ส่วนตัว (สูงสุด 5 ชื่อ) -->
+    <div id="profileSection" class="app-section auth-card profile-mode">
+        <div class="auth-title">SELECT PROFILE</div>
+        <div class="auth-desc" id="profileCountText">เลือกชื่อผู้ใช้งานของท่าน (0/5 ชื่อ)</div>
+        <div class="profile-list" id="profilesList"></div>
+        <div id="createProfileForm" style="margin-top: 20px; border-top: 1px solid var(--border-normal); padding-top: 15px;">
+            <div class="form-group">
+                <label>สร้างชื่อตัวละครใหม่ (จำลองบนบราวเซอร์นี้)</label>
+                <input type="text" id="newProfileName" class="form-control" placeholder="พิมพ์ชื่อที่ต้องการ">
+            </div>
+            <button class="btn-submit" style="color:var(--color-success); border-color:var(--color-success);" onclick="handleCreateProfile()">+ CREATE NEW NAME</button>
+        </div>
+        <br>
+        <button class="btn-action" style="width:100%; border-color:var(--color-danger); color:var(--color-danger);" onclick="handleForceResetView()">LOGOUT</button>
+    </div>
+
+    <!-- 4. หน้าจอหลักของแอปพลิเคชันจับเวลา -->
+    <div id="mainTimerSection" class="app-section">
+        
+        <div class="global-online-badge">
+            <div class="pulse-dot"></div>
+            <span>ONLINE: <span id="mainOnlineCountText" style="color:var(--color-success);">1</span></span>
+        </div>
+
+        <div class="admin-nav-bar" id="adminNavBar" style="display: flex;">
+            <button class="btn-nav active" id="navBtnTimer" onclick="switchAdminTab('timer')">⚔️ หน้าจัดการเวลาบอส</button>
+            <button class="btn-nav" id="navBtnAdmin" onclick="switchAdminTab('admin')">👑 แผงควบคุมแอดมิน (CONTROL PANEL)</button>
+        </div>
+
+        <div id="tabTimerContent" class="tab-content active">
+            <h1>WARZ BOSS TIMER (DEMO)</h1>
+            <div class="user-badge" id="activeUserBadge">👤 OPERATOR: Loading...</div>
+
+            <div class="audio-dashboard-container">
+                <div class="audio-control-card">
+                    <div class="audio-card-title">🔊 การตั้งค่าเสียงแจ้งเตือนแคลน</div>
+                    <div class="volume-slider-group" style="margin-top: auto; margin-bottom: auto; width: 100%; box-sizing: border-box;">
+                        <label>ระดับเสียงเตือน:</label>
+                        <input type="range" id="alertVolumeSlider" class="slider-input" min="0" max="100" value="50" oninput="updateAlertVolume(this.value)">
+                        <span class="volume-value" id="alertVolumeVal">50%</span>
+                    </div>
+                </div>
+                <div class="audio-control-card">
+                    <div class="audio-card-title">📻 ระบบลำโพงประจำแคลน (YouTube)</div>
+                    <div class="youtube-input-group">
+                        <input type="text" id="ytLinkInput" class="form-control" placeholder="วางลิงก์เพลง YouTube ที่นี่...">
+                        <button class="btn-action btn-spawn-style" style="min-width:90px; padding:0 10px;" onclick="loadYouTubeVideo()">เปิดเพลง</button>
+                    </div>
+                    <div class="volume-slider-group" style="padding: 10px 15px; margin-bottom: 12px; width: 100%; box-sizing: border-box;">
+                        <label>ระดับเสียงเพลง:</label>
+                        <input type="range" id="musicVolumeSlider" class="slider-input" min="0" max="100" value="40" oninput="updateMusicVolume(this.value)">
+                        <span class="volume-value" id="musicVolumeVal">40%</span>
+                    </div>
+                    <div class="music-btn-cluster">
+                        <button class="btn-action" style="padding: 7px 0;" onclick="controlMusic('prev')">⏮️ ก่อนหน้า</button>
+                        <button class="btn-action btn-reset-style" style="padding: 7px 0;" onclick="controlMusic('stop')">⏹️ ปิดเพลง</button>
+                        <button class="btn-action" style="padding: 7px 0;" onclick="controlMusic('next')">⏭️ ถัดไป</button>
+                    </div>
+                    <div class="youtube-player-area" id="ytPlayerFrameWrapper">
+                        <div id="youtubePlayerTarget"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="server-selector">
+                <button class="btn-server active" id="server_btn_premium" onclick="switchServer('premium', this)">PREMIUM SERVER (50ห้อง)</button>
+                <button class="btn-server" id="server_btn_official" onclick="switchServer('official', this)">OFFICIAL SERVER (30ห้อง)</button>
+            </div>
+
+            <div class="location-grid">
+                <div class="location-card active" id="loc_btn_norad" onclick="switchLocation('norad', this)">🏢 <div class="location-name">Norad Military Base</div></div>
+                <div class="location-card" id="loc_btn_ridgeway" onclick="switchLocation('ridgeway', this)">✈️ <div class="location-name">Ridgeway Airport</div></div>
+                <div class="location-card" id="loc_btn_crystal" onclick="switchLocation('crystal', this)">🏠 <div class="location-name">Crystal Lake resort</div></div>
+                <div class="location-card" id="loc_btn_campos" onclick="switchLocation('campos', this)">🌆 <div class="location-name">Campos City</div></div>
+            </div>
+
+            <div class="current-view-title" id="currentViewText">📍 Norad Military Base</div>
+            <div class="rooms-grid" id="roomsGrid"></div>
+
+            <div class="log-container">
+                <div class="log-header">📟 LIVE ACTIVITY LOGS</div>
+                <div class="log-box-list" id="logsBoxList">
+                    <div style="color:var(--text-muted)">ไม่มีความเคลื่อนไหวล่าสุดในขณะนี้...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabAdminContent" class="tab-content">
+            <div class="admin-panel-box">
+                <div class="admin-header">👑 GUILD ADMINISTRATOR CONTROL PANEL (DEMO)</div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>สถานะสิทธิ์การเข้าใช้งานปัจจุบัน</th>
+                            <th>การจัดการเปิดสิทธิ์ / BAN ถาวร</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUserTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <br>
+        <button class="btn-action" style="max-width:220px; width:100%; border-color:var(--color-danger); color:var(--color-danger);" onclick="handleForceResetView()">สลับตัวละคร / ออกระบบ</button>
+    </div>
+
+    <!-- โหลด YouTube Iframe API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        // --- 1. ตั้งค่าพื้นฐาน (Configuration) ---
+        const BOSS_COOLDOWN = 12 * 60 * 1000; // ⏱️ ตั้งเวลาบอสเดโม 12 นาที
+        const UNDO_WINDOW = 4 * 60 * 1000;       
+        const FLASH_DURATION = 50 * 1000;       
+        
+        const locationNames = { norad: "Norad Military Base", ridgeway: "Ridgeway Airport", crystal: "Crystal Lake resort", campos: "Campos City" };
+        
+        // --- 2. ฟื้นฟูข้อมูลจากเครื่องแบบปลอดภัยไร้บั๊ก (Safe LocalStorage Parsing) ---
+        let mockDB = { boss: {}, users: {}, logs: [] };
+        try {
+            const storedDB = localStorage.getItem('demo_db');
+            if (storedDB) {
+                const parsed = JSON.parse(storedDB);
+                if (parsed && typeof parsed === 'object') {
+                    mockDB.boss = parsed.boss || {};
+                    mockDB.users = parsed.users || {};
+                    mockDB.logs = parsed.logs || [];
+                }
+            }
+        } catch (e) {
+            console.warn("ล้างข้อมูลฐานข้อมูลจำลองที่เสียหาย");
+            localStorage.removeItem('demo_db');
+        }
+
+        let currentUser = localStorage.getItem('demo_user') || null;
+        let currentServer = localStorage.getItem('demo_server') || "premium"; 
+        let currentLocation = localStorage.getItem('demo_location') || "norad";
+        let activeTab = localStorage.getItem('demo_active_tab') || "timer"; 
+        let activeProfileName = localStorage.getItem('demo_profile_name') || "Unknown";
+        let isAdminAccount = true; 
+
+        let alertVolume = 50;
+        try { alertVolume = parseInt(localStorage.getItem('demo_volume_alert') ?? '50'); } catch(e){}
+        
+        let musicVolume = 40;
+        try { musicVolume = parseInt(localStorage.getItem('demo_volume_music') ?? '40'); } catch(e){}
+        
+        let ytPlayer = null;
+        let playedAlerts = {};
+
+        // --- 3. ฟังก์ชันระบบ (Core Logic) ---
+        function showSection(sectionId) {
+            document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
+            const el = document.getElementById(sectionId);
+            if(el) el.classList.add('active');
+        }
+
+        function saveDB() {
+            localStorage.setItem('demo_db', JSON.stringify(mockDB));
+        }
+
+        window.handleLogin = function() {
+            const user = document.getElementById('loginUser').value.trim();
+            if(!user) return alert("กรุณากรอกชื่อผู้ใช้งานทดสอบ");
+            
+            currentUser = user.toLowerCase();
+            localStorage.setItem('demo_user', currentUser);
+            
+            if(!mockDB.users[currentUser]) {
+                mockDB.users[currentUser] = { username: user, status: "active" };
+                saveDB();
+            }
+            checkUserStatus();
+        };
+
+        window.handleSignUp = function() {
+            const user = document.getElementById('regUser').value.trim();
+            const pass = document.getElementById('regPass').value;
+            if(!user || !pass) return alert("กรุณากรอกข้อมูลให้ครบ");
+            
+            currentUser = user.toLowerCase();
+            localStorage.setItem('demo_user', currentUser);
+            mockDB.users[currentUser] = { username: user, status: "active" };
+            saveDB();
+            
+            alert("สมัครสมาชิกจำลองสำเร็จ!");
+            checkUserStatus();
+        };
+
+        function checkUserStatus() {
+            if(mockDB.users[currentUser] && mockDB.users[currentUser].status === "banned") {
+                alert("❌ บัญชีนี้ถูกระงับการใช้งานในระบบเดโม");
+                handleForceResetView();
+                return;
+            }
+
+            if (localStorage.getItem('demo_profile_selected') === 'true') {
+                document.getElementById('activeUserBadge').innerText = `👤 OPERATOR: ${activeProfileName} [DEMO ADMIN]`;
+                showSection('mainTimerSection');
+                initAudioSlidersValues();
+                setupLiveListeners();
+                switchAdminTab(activeTab);
+            } else {
+                loadProfiles();
+            }
+        }
+
+        function initAudioSlidersValues() {
+            document.getElementById('alertVolumeSlider').value = alertVolume;
+            document.getElementById('alertVolumeVal').innerText = alertVolume + "%";
+            document.getElementById('musicVolumeSlider').value = musicVolume;
+            document.getElementById('musicVolumeVal').innerText = musicVolume + "%";
+        }
+
+        window.updateAlertVolume = function(val) {
+            alertVolume = parseInt(val);
+            localStorage.setItem('demo_volume_alert', val);
+            document.getElementById('alertVolumeVal').innerText = val + "%";
+        };
+
+        window.updateMusicVolume = function(val) {
+            musicVolume = parseInt(val);
+            localStorage.setItem('demo_volume_music', val);
+            document.getElementById('musicVolumeVal').innerText = val + "%";
+            if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
+                ytPlayer.setVolume(musicVolume);
+            }
+        };
+
+        function loadProfiles() {
+            showSection('profileSection');
+            const listEl = document.getElementById('profilesList');
+            listEl.innerHTML = "";
+            
+            const profileKey = 'profiles_' + currentUser;
+            let profiles = [];
+            try {
+                const storedProfiles = localStorage.getItem(profileKey);
+                if(storedProfiles) profiles = JSON.parse(storedProfiles);
+            } catch(e){}
+
+            if(profiles.length === 0) profiles = ["Operator_" + (currentUser || "").toUpperCase()];
+            localStorage.setItem(profileKey, JSON.stringify(profiles));
+
+            profiles.forEach(pName => {
+                const item = document.createElement('div');
+                item.className = 'profile-item';
+                item.innerHTML = `<span class="profile-name-text">🎮 ${pName}</span> <button class="btn-action" style="width:auto; padding:5px 15px;" onclick="selectProfile('${pName}')">เลือก</button>`;
+                listEl.appendChild(item);
+            });
+            document.getElementById('profileCountText').innerText = `เลือกชื่อผู้ใช้งานของท่าน (${profiles.length}/5 ชื่อ)`;
+            document.getElementById('createProfileForm').style.display = profiles.length >= 5 ? 'none' : 'block';
+        }
+
+        window.handleCreateProfile = function() {
+            const name = document.getElementById('newProfileName').value.trim();
+            if(!name) return alert("กรุณาระบุชื่อ");
+            
+            const profileKey = 'profiles_' + currentUser;
+            let profiles = [];
+            try { profiles = JSON.parse(localStorage.getItem(profileKey)) || []; } catch(e){}
+            
+            if(profiles.length >= 5) return alert("สร้างได้สูงสุด 5 ชื่อ");
+            if(profiles.includes(name)) return alert("มีชื่อนี้อยู่แล้ว");
+            
+            profiles.push(name);
+            localStorage.setItem(profileKey, JSON.stringify(profiles));
+            document.getElementById('newProfileName').value = "";
+            loadProfiles();
+        };
+
+        window.selectProfile = function(pName) {
+            activeProfileName = pName;
+            localStorage.setItem('demo_profile_name', pName);
+            localStorage.setItem('demo_profile_selected', 'true');
+            checkUserStatus();
+        };
+
+        function setupLiveListeners() {
+            buildRoomsGrid();
+            loadLogsList();
+            document.getElementById('mainOnlineCountText').innerText = Object.keys(mockDB.users).length || 1;
+            
+            // Highlight location / server
+            document.querySelectorAll('.btn-server').forEach(btn => btn.classList.remove('active'));
+            const sBtn = document.getElementById(`server_btn_${currentServer}`);
+            if(sBtn) sBtn.classList.add('active');
+
+            document.querySelectorAll('.location-card').forEach(card => card.classList.remove('active'));
+            const lBtn = document.getElementById(`loc_btn_${currentLocation}`);
+            if(lBtn) lBtn.classList.add('active');
+        }
+
+        function loadLogsList() {
+            const logBox = document.getElementById('logsBoxList');
+            if(!logBox) return;
+            logBox.innerHTML = "";
+            if(mockDB.logs.length === 0) {
+                logBox.innerHTML = '<div style="color:var(--text-muted)">ไม่มีความเคลื่อนไหวล่าสุดในขณะนี้...</div>';
+                return;
+            }
+            mockDB.logs.slice(-30).reverse().forEach(l => {
+                logBox.innerHTML += `<div class="log-item"><span class="log-time">[${l.time}]</span> <span style="color:var(--color-primary); font-weight:600;">${l.user}</span>: ${l.action}</div>`;
+            });
+        }
+
+        function pushLog(actionText) {
+            const timeStr = new Date().toLocaleTimeString('th-TH');
+            mockDB.logs.push({ time: timeStr, user: activeProfileName, action: actionText });
+            saveDB();
+            loadLogsList();
+        }
+
+        window.switchAdminTab = function(tabName) {
+            activeTab = tabName;
+            localStorage.setItem('demo_active_tab', tabName);
+            document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            if (tabName === 'timer') {
+                document.getElementById('navBtnTimer').classList.add('active');
+                document.getElementById('tabTimerContent').classList.add('active');
+                buildRoomsGrid(); 
+            } else if (tabName === 'admin') {
+                document.getElementById('navBtnAdmin').classList.add('active');
+                document.getElementById('tabAdminContent').classList.add('active');
+                loadAdminUserPanel(); 
+            }
+        }
+
+        function loadAdminUserPanel() {
+            const tbody = document.getElementById('adminUserTableBody');
+            tbody.innerHTML = "";
+            Object.keys(mockDB.users).forEach(key => {
+                const u = mockDB.users[key];
+                const tr = document.createElement('tr');
+                let badgeClass = u.status === "active" ? "status-active" : "status-banned";
+                let badgeText = u.status === "active" ? "ใช้งานได้ถาวร" : "BAN ถาวร";
+
+                tr.innerHTML = `
+                    <td><span class="online-dot online"></span><b>${u.username}</b></td>
+                    <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+                    <td>
+                        <button class="admin-btn btn-approve" onclick="updateUserStatus('${key}', 'active')">อนุมัติถาวร</button>
+                        <button class="admin-btn btn-ban" onclick="updateUserStatus('${key}', 'banned')">BAN ผู้ใช้</button>
+                        <button class="admin-btn btn-delete" onclick="handleDeleteUser('${key}')">ลบ ID</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.updateUserStatus = function(key, status) {
+            mockDB.users[key].status = status;
+            saveDB();
+            loadAdminUserPanel();
+        };
+
+        window.handleDeleteUser = function(key) {
+            if(confirm("ลบ ID จำลองนี้หรือไม่?")) {
+                delete mockDB.users[key];
+                saveDB();
+                loadAdminUserPanel();
+            }
+        };
+
+        function buildRoomsGrid() {
+            if(activeTab === 'admin') return;
+            const roomsContainer = document.getElementById('roomsGrid');
+            if(!roomsContainer) return;
+            roomsContainer.innerHTML = "";
+            const maxRooms = (currentServer === "premium") ? 50 : 30;
+            const serverPrefix = currentServer === 'premium' ? 'TH PREMIUM SERVER' : 'TH SERVER';
+            
+            document.getElementById('currentViewText').innerText = `📍 ${locationNames[currentLocation]}`;
+            
+            for (let i = 1; i <= maxRooms; i++) {
+                const roomBox = document.createElement('div');
+                roomBox.className = "room-box";
+                roomBox.id = `box_room_${i}`;
+                
+                const dbKey = `${currentServer}_${currentLocation}_room_${i}`;
+                const roomData = mockDB.boss[dbKey] || {};
+                const ownerName = roomData.owner || "";
+                let ownerText = ownerName ? (ownerName === activeProfileName ? "👑 คุณกำลังควบคุมห้องนี้" : `🔒 ล็อกโดย: ${ownerName}`) : "";
+
+                roomBox.innerHTML = `
+                    <div class="room-title">${serverPrefix} ${i.toString().padStart(3, '0')}</div>
+                    <div class="room-owner-tag" id="owner_room_${i}">${ownerText}</div>
+                    <div class="room-timer" id="timer_room_${i}">00:00:00</div>
+                    <div class="progress-container"><div class="progress-bar" id="progress_room_${i}"></div></div><div class="divider"></div>
+                    <div class="btn-group">
+                        <button class="btn-action btn-spawn-style" id="btn_spawn_${i}" onclick="spawnBoss(${i})">SPAWN</button>
+                        <button class="btn-action" id="id_btn_undo_${i}" onclick="undoReset(${i})" disabled>UNDO</button>
+                        <button class="btn-action btn-reset-style" id="id_btn_reset_${i}" onclick="resetBoss(${i})" disabled>RESET</button>
+                    </div>
+                `;
+                roomsContainer.appendChild(roomBox);
+            }
+            updateTimersOnly();
+        }
+
+        function updateTimersOnly() {
+            if(activeTab === 'admin') return;
+            const maxRooms = (currentServer === "premium") ? 50 : 30;
+            const now = new Date().getTime();
+            
+            for (let i = 1; i <= maxRooms; i++) {
+                const boxEl = document.getElementById(`box_room_${i}`);
+                const timerEl = document.getElementById('timer_room_' + i);
+                const progressEl = document.getElementById('progress_room_' + i);
+                const btnSpawn = document.getElementById(`btn_spawn_${i}`);
+                const btnUndo = document.getElementById(`id_btn_undo_${i}`);
+                const btnReset = document.getElementById(`id_btn_reset_${i}`);
+                if (!timerEl) continue;
+
+                const dbKey = `${currentServer}_${currentLocation}_room_${i}`;
+                const roomData = mockDB.boss[dbKey] || {};
+                const targetTime = roomData.respawnAt || 0;
+                const updatedAt = roomData.updatedAt || 0;
+                const timeLeft = targetTime - now;
+                const ownerName = roomData.owner || "";
+                const resetOwnerName = roomData.resetOwner || "";
+
+                const isOwner = (ownerName === activeProfileName || ownerName === "");
+                const isResetOwner = (resetOwnerName === activeProfileName || isAdminAccount);
+
+                if (roomData.resetAt && (now - roomData.resetAt < UNDO_WINDOW) && roomData.prevRespawn) { 
+                    btnUndo.disabled = !isResetOwner; 
+                } else { 
+                    btnUndo.disabled = true; 
+                }
+
+                if (timeLeft > 0) {
+                    boxEl.className = "room-box counting";
+                    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    
+                    timerEl.innerText = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`; 
+                    timerEl.className = "room-timer counting-text";
+                    
+                    const percent = (targetTime - updatedAt) > 0 ? ((timeLeft / (targetTime - updatedAt)) * 100) : 0;
+                    progressEl.style.width = `${percent}%`;
+                    
+                    if (minutes === 10 && seconds === 0 && !playedAlerts[dbKey + '_10m']) { playBeep('10min'); playedAlerts[dbKey + '_10m'] = true; }
+                    if (minutes === 5 && seconds === 0 && !playedAlerts[dbKey + '_5m']) { playBeep('5min'); playedAlerts[dbKey + '_5m'] = true; }
+                    
+                    btnSpawn.disabled = true;
+                    btnReset.disabled = !isOwner;
+                } else if (targetTime > 0 && timeLeft <= 0 && (now - targetTime < FLASH_DURATION)) {
+                    boxEl.className = "room-box spawn-flash";
+                    timerEl.innerText = "บอสเกิดแล้ว!!";
+                    timerEl.className = "room-timer spawned-text";
+                    progressEl.style.width = "0%";
+                    if (!playedAlerts[dbKey + '_spawn']) { playBeep('spawn'); playedAlerts[dbKey + '_spawn'] = true; }
+                    
+                    btnSpawn.disabled = true; 
+                    btnReset.disabled = true;
+                } else {
+                    boxEl.className = "room-box";
+                    timerEl.innerText = "00:00:00";
+                    timerEl.className = "room-timer";
+                    progressEl.style.width = "0%";
+                    delete playedAlerts[dbKey + '_10m']; delete playedAlerts[dbKey + '_5m']; delete playedAlerts[dbKey + '_spawn'];
+                    
+                    btnSpawn.disabled = false; 
+                    btnReset.disabled = true;
+                }
+            }
+        }
+
+        window.spawnBoss = function(roomNumber) {
+            const now = new Date().getTime();
+            const nextRespawn = now + BOSS_COOLDOWN;
+            const dbKey = `${currentServer}_${currentLocation}_room_${roomNumber}`;
+            
+            mockDB.boss[dbKey] = { respawnAt: nextRespawn, updatedAt: now, resetAt: null, prevRespawn: null, owner: activeProfileName };
+            saveDB();
+            buildRoomsGrid();
+            pushLog(`🎯 SPAWN บอสที่ [${currentServer.toUpperCase()}] -> ${locationNames[currentLocation]} ห้องที่ ${roomNumber.toString().padStart(3, '0')}`);
+        };
+
+        window.resetBoss = function(roomNumber) {
+            const now = new Date().getTime();
+            const dbKey = `${currentServer}_${currentLocation}_room_${roomNumber}`;
+            const currentRoomData = mockDB.boss[dbKey] || {};
+            
+            mockDB.boss[dbKey] = { respawnAt: 0, updatedAt: now, resetAt: now, prevRespawn: currentRoomData.respawnAt || 0, owner: "", resetOwner: activeProfileName };
+            saveDB();
+            buildRoomsGrid();
+            pushLog(`⚠️ RESET เวลาบอสที่ [${currentServer.toUpperCase()}] -> ${locationNames[currentLocation]} ห้องที่ ${roomNumber.toString().padStart(3, '0')}`);
+        };
+
+        window.undoReset = function(roomNumber) {
+            const now = new Date().getTime();
+            const dbKey = `${currentServer}_${currentLocation}_room_${roomNumber}`;
+            const currentRoomData = mockDB.boss[dbKey] || {};
+            if (currentRoomData.prevRespawn) {
+                mockDB.boss[dbKey] = { respawnAt: currentRoomData.prevRespawn, updatedAt: now, resetAt: null, prevRespawn: null, owner: activeProfileName, resetOwner: "" };
+                saveDB();
+                buildRoomsGrid();
+                pushLog(`🔄 UNDO เวลาบอสที่ [${currentServer.toUpperCase()}] -> ${locationNames[currentLocation]} ห้องที่ ${roomNumber.toString().padStart(3, '0')}`);
+            }
+        };
+
+        window.switchServer = function(serverType, element) { 
+            currentServer = serverType; 
+            localStorage.setItem('demo_server', serverType);
+            document.querySelectorAll('.btn-server').forEach(btn => btn.classList.remove('active')); 
+            element.classList.add('active'); 
+            buildRoomsGrid(); 
+        };
+        
+        window.switchLocation = function(locationType, element) { 
+            currentLocation = locationType; 
+            localStorage.setItem('demo_location', locationType);
+            document.querySelectorAll('.location-card').forEach(card => card.classList.remove('active')); 
+            element.classList.add('active'); 
+            buildRoomsGrid(); 
+        };
+
+        window.handleForceResetView = function() {
+            localStorage.removeItem('demo_profile_selected');
+            localStorage.removeItem('demo_profile_name');
+            localStorage.removeItem('demo_user');
+            location.reload();
+        };
+
+        function playBeep(type) {
+            try {
+                const configuredGain = (alertVolume / 100) * 0.15;
+                if(configuredGain <= 0) return;
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator(); 
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode); gainNode.connect(audioCtx.destination); 
+                
+                if (type === '10min') { 
+                    gainNode.gain.setValueAtTime(configuredGain, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); 
+                    oscillator.start(); setTimeout(() => { oscillator.stop(); audioCtx.close(); }, 150); 
+                } else if (type === '5min') { 
+                    gainNode.gain.setValueAtTime(configuredGain, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(520, audioCtx.currentTime); 
+                    oscillator.start(); setTimeout(() => { oscillator.stop(); audioCtx.close(); }, 150); 
+                } else if (type === 'spawn') { 
+                    gainNode.gain.setValueAtTime(configuredGain * 1.2, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(660, audioCtx.currentTime); 
+                    oscillator.start(); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0); 
+                    setTimeout(() => { oscillator.stop(); audioCtx.close(); }, 1000); 
+                }
+            } catch (e) {}
+        }
+
+        function extractYouTubeID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function extractYouTubePlaylistID(url) {
+            const regExp = /[&?]list=([^#&?]+)/;
+            const match = url.match(regExp);
+            return (match && match[1]) ? match[1] : null;
+        }
+
+        window.loadYouTubeVideo = function() {
+            // ดัก Error ก่อนโหลด YouTube API หากบราวเซอร์ยังโหลด API สากลไม่เสร็จ
+            if (typeof YT === 'undefined' || !YT.Player) {
+                alert("ระบบเล่นเพลงกำลังโหลดเชื่อมต่อเซิร์ฟเวอร์ กรุณารอสักครู่แล้วกดอีกครั้งครับ");
+                return;
+            }
+
+            const url = document.getElementById('ytLinkInput').value.trim();
+            if(!url) return alert("กรุณาใส่ลิงก์ YouTube ก่อนครับ");
+
+            const videoId = extractYouTubeID(url);
+            const playlistId = extractYouTubePlaylistID(url);
+            
+            if(!videoId && !playlistId) return alert("รูปแบบลิงก์ YouTube ไม่ถูกต้องครับ");
+
+            document.getElementById('ytPlayerFrameWrapper').style.display = 'block';
+
+            if (ytPlayer === null) {
+                ytPlayer = new YT.Player('youtubePlayerTarget', {
+                    height: '100%', width: '100%', videoId: videoId || "",
+                    playerVars: { 'autoplay': 1, 'controls': 1, 'listType': playlistId ? 'playlist' : '', 'list': playlistId || '' },
+                    events: { 'onReady': (event) => { event.target.setVolume(musicVolume); } }
+                });
+            } else {
+                if (playlistId) ytPlayer.loadPlaylist({ list: playlistId, listType: 'playlist', index: 0 });
+                else if (videoId) ytPlayer.loadVideoById(videoId);
+                ytPlayer.setVolume(musicVolume);
+            }
+        };
+
+        window.controlMusic = function(action) {
+            if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+            if (action === 'next' && typeof ytPlayer.nextVideo === 'function') ytPlayer.nextVideo();
+            if (action === 'prev' && typeof ytPlayer.previousVideo === 'function') ytPlayer.previousVideo();
+            if (action === 'stop') {
+                ytPlayer.stopVideo();
+                document.getElementById('ytPlayerFrameWrapper').style.display = 'none';
+                document.getElementById('ytLinkInput').value = "";
+            }
+        };
+
+        // --- 4. บังคับจุดประกายระบบเริ่มต้นรันทันที (Kickstart Setup) ---
+        if (currentUser) {
+            checkUserStatus();
+        } else {
+            showSection('loginSection');
+        }
+
+        setInterval(updateTimersOnly, 1000);
+    </script>
+</body>
+</html>
